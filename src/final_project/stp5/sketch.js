@@ -18,51 +18,31 @@
 // css도 추가함
 
 //js도 수정해야하는데, createCanvas() 후에 캔버스를 #canvas-container에 붙여줘함
-
+// 아니, CORS 정책 문제로 화면 사라짐..
 let video;
 let faceMesh;
 let faces = [];
 let lipStemp;
 
-// preload()는 setup() 전에 딱 한 번 로드되게 하는 함수
-function preload() {
-  // ml5.faceMesh: 얼굴 인식 불러오는 함수 | maxFaces = 얼굴 인식 최대 갯수
-  faceMesh = ml5.faceMesh({ maxFaces: 3, flipped: true });
-}
-
-// 얼굴 인식, 저장
-function gotFaces(results) {
-  faces = results;
-}
-
-// 윈도우 리사이즈로 아래 캔버스 설정한거 따라가기
-// 창 크기 바뀔때 쓰는 windowResized()
-function windowResized() {
-  // 윈도우 기존에 있던 715*820 사이즈 하니 템플릿처럼 안 나와서 windowWidth로 탈바꿈
-  resizeCanvas(windowWidth, windowHeight);
-  // 입술도 같이 변경해야함
-  lipStemp = createGraphics(windowWidth, windowHeight);
-  // 캔버스 투명 초기화 이전 데이터 삭제
-  lipStemp.clear();
-}
-
 function setup() {
-  // 템플릿 내부 좌표계
   const canvas = createCanvas(windowWidth, windowHeight);
-
-  // HTML div에 붙여야함
-
   canvas.parent('canvas-container');
   lipStemp = createGraphics(windowWidth, windowHeight);
   lipStemp.clear();
 
-  // 비디오 캡처 설정
-  video = createCapture(VIDEO, { flipped: true });
+  video = createCapture(VIDEO);
   video.size(640, 480);
   video.hide();
 
-  // 얼굴 인식 시작
-  faceMesh.detectStart(video, gotFaces);
+  // faceMesh 초기화 (ml5@0.6.0 방식)
+  // faceMesh = ml5.faceMesh({ maxFaces: 1, flipped: true })이게 안되네..
+  faceMesh = ml5.facemesh(video, () => {
+    console.log('faceMesh ready');
+  });
+
+  faceMesh.on('predict', (results) => {
+    faces = results;
+  });
 }
 
 function draw() {
@@ -101,6 +81,8 @@ function draw() {
   // cover로 인한 비율 문제로 얼굴 점도 비율에 맞춘 코드(정상화)
   if (faces.length > 0) {
     let face = faces[0];
+    let keypoints = face.scaledMesh;
+
     // 왜 안되냐..
     // 입술 좌표들..입술 왜 하란대로 했는데.. 안나오냐 입술 숫자 다니엘 데니쉬분 보면서 적음..주댕이..힘드네
     let lipsExterior = [
@@ -119,9 +101,9 @@ function draw() {
     // if (frameCount % 45 === 0) {
     let cX = 0,
       cY = 0;
-    for (let centers of lipsExterior) {
-      cX += face.keypoints[centers].x;
-      cY += face.keypoints[centers].y;
+    for (let centers = 0; centers < lipsExterior.length; centers++) {
+      cX += keypoints[lipsExterior[centers]][0];
+      cY += keypoints[lipsExterior[centers]][1];
     }
     cX /= lipsExterior.length;
     cY /= lipsExterior.length;
@@ -132,10 +114,10 @@ function draw() {
     lipStemp.strokeWeight(1);
     lipStemp.beginShape();
 
-    for (let aSum of lipsExterior) {
-      let pt = face.keypoints[aSum];
-      let x = (pt.x - cX) * lipBig + cX;
-      let y = (pt.y - cY) * lipBig + cY;
+    for (let aSum = 0; aSum < lipsExterior.length; aSum++) {
+      let pt = keypoints[lipsExterior[aSum]];
+      let x = (pt[0] - cX) * lipBig + cX;
+      let y = (pt[1] - cY) * lipBig + cY;
       x = map(x, 0, video.width, zeroX, zeroX + newWidth);
       y = map(y, 0, video.height, zeroY, zeroY + newHeight);
       lipStemp.vertex(x, y);
@@ -145,10 +127,10 @@ function draw() {
     lipStemp.beginContour();
 
     // 꼭 입술 안에 색 없애려면 반대로 순회하는 구조 만들어야함
-    for (let add = lipsInterior.length - 1; add >= 0; add--) {
-      let pt = face.keypoints[lipsInterior[add]];
-      let x = (pt.x - cX) * lipBig + cX;
-      let y = (pt.y - cY) * lipBig + cY;
+    for (let cnt = lipsInterior.length - 1; cnt >= 0; cnt--) {
+      let pt = keypoints[lipsInterior[cnt]];
+      let x = (pt[0] - cX) * lipBig + cX;
+      let y = (pt[1] - cY) * lipBig + cY;
       x = map(x, 0, video.width, zeroX, zeroX + newWidth);
       y = map(y, 0, video.height, zeroY, zeroY + newHeight);
       lipStemp.vertex(x, y);
@@ -158,11 +140,11 @@ function draw() {
     lipStemp.endShape(CLOSE);
     // }
     // 얼굴에 점(키포인트) 그리기 위치가 얼굴 고정 안되고 정수리에 그려짐
-    // for (let cnt = 0; cnt < face.keypoints.length; cnt++) {
-    //   let keypoint = face.keypoints[cnt];
+    // for (let cnt = 0; cnt < keypoints.length; cnt++) {
+    //   let pt = keypoints[cnt];
     //   stroke(255, 255, 0);
     //   strokeWeight(5);
-    //   point(keypoint.x, keypoint.y);
+    //   point(pt[0], pt[1]);
     // }
   }
 }
