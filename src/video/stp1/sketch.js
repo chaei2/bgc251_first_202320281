@@ -1,3 +1,5 @@
+// 교수님 수업 코드인데, 실수로 과제하다가 건들임 수정해야함
+
 let video;
 
 function setup() {
@@ -27,6 +29,7 @@ function draw() {
   zeroY = (height - newHeight) / 2;
 
   image(video, zeroX, zeroY, newWidth, newHeight);
+
   noStroke();
   fill('red');
   circle(mouseX, mouseY, 50);

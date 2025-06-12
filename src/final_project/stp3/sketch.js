@@ -54,12 +54,20 @@ function draw() {
   if (faces.length > 0) {
     let face = faces[0];
     let lEyeBrow = face.leftEyeBrow;
-    // 얼굴에 점(키포인트) 그리기
-    for (let cnt = 0; cnt < face.keypoints.length; cnt++) {
-      let keypoint = face.keypoints[cnt];
+    for (let pt of face.keypoints) {
+      let x = map(pt.x, 0, video.width, zeroX, zeroX + newWidth);
+      let y = map(pt.y, 0, video.height, zeroY, zeroY + newHeight);
       stroke(255, 255, 0);
       strokeWeight(5);
-      point(keypoint.x, keypoint.y);
+      point(x, y);
     }
+
+    // 얼굴에 점(키포인트) 그리기 위치가 고정 안됨
+    // for (let cnt = 0; cnt < face.keypoints.length; cnt++) {
+    //   let keypoint = face.keypoints[cnt];
+    //   stroke(255, 255, 0);
+    //   strokeWeight(5);
+    //   point(keypoint.x, keypoint.y);
+    // }
   }
 }
