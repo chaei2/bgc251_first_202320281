@@ -22,15 +22,11 @@
 let video;
 let faceMesh;
 let faces = [];
+let lipStemp;
 
 // preload()는 setup() 전에 딱 한 번 로드되게 하는 함수
 function preload() {
   faceMesh = ml5.faceMesh({ maxFaces: 1, flipped: true });
-}
-
-function mousePressed() {
-  // Log detected face data tothe console
-  console.log(faces);
 }
 
 function gotFaces(results) {
@@ -41,6 +37,8 @@ function gotFaces(results) {
 function windowResized() {
   // 윈도우 기존에 있던 715*820 사이즈 하니 템플릿처럼 안 나와서 windowWidth로 탈바꿈
   resizeCanvas(windowWidth, windowHeight);
+  lipStemp = createGraphics(windowWidth, windowHeight);
+  lipStemp.clear();
 }
 
 function setup() {
@@ -48,6 +46,8 @@ function setup() {
   const canvas = createCanvas(windowWidth, windowHeight);
   // HTML div에 붙여야함
   canvas.parent('canvas-container');
+  lipStemp = createGraphics(windowWidth, windowHeight);
+  lipStemp.clear();
 
   // 비디오 캡처 설정
   video = createCapture(VIDEO, { flipped: true });
@@ -59,7 +59,19 @@ function setup() {
 }
 
 function draw() {
-  background(0);
+  background('black');
+  image(lipStemp, 0, 0);
+
+  textStyle(BOLDITALIC);
+  textSize(70);
+  textAlign(CENTER);
+  fill('white');
+  text('Lips', width / 2, height / 7);
+
+  lipStemp.fill(0, 0, random(0, 200), 10);
+  lipStemp.noStroke();
+  lipStemp.rect(0, 0, width, height);
+
   // 손교수님 수업 video stp1 부분 cover()
   let aspectRatioCanvas = width / height;
   let aspectRatioVideo = video.width / video.height;
@@ -77,51 +89,67 @@ function draw() {
   zeroX = (width - newWidth) / 2;
   zeroY = (height - newHeight) / 2;
 
-  image(video, zeroX, zeroY, newWidth, newHeight);
   noStroke();
 
   // cover로 인한 비율 문제로 얼굴 점도 비율에 맞춘 코드(정상화)
   if (faces.length > 0) {
     let face = faces[0];
     // 왜 안되냐..
-    // let lips = face.annotations?.lips;
-
     // 입술 좌표들..입술 왜 하란대로 했는데.. 안나오냐 입술 숫자 다니엘 데니쉬분 보면서 적음..주댕이..힘드네
     let lipsExterior = [
       267, 269, 270, 409, 291, 375, 321, 405, 314, 17, 84, 181, 91, 146, 61,
       185, 40, 39, 37, 0,
     ];
-
     let lipsInterior = [
       13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95, 78,
       191, 80, 81, 82,
     ];
 
-    // 윗 주딩이 그리기
-    beginShape();
-    stroke(255, 255, 0);
-    noFill();
-    strokeWeight(1);
+    // 입술 크게
+    let lipBig = 3.5;
 
-    // 아래 주딩이 그리기
+    // 주댕이 색
+    // if (frameCount % 45 === 0) {
+    let cX = 0,
+      cY = 0;
+    for (let centers of lipsExterior) {
+      cX += face.keypoints[centers].x;
+      cY += face.keypoints[centers].y;
+    }
+    cX /= lipsExterior.length;
+    cY /= lipsExterior.length;
+
+    // 외곽 주딩이 그리기
+    lipStemp.fill(250, 50, 30);
+    // lipStemp.stroke(255, 0, 0);
+    lipStemp.strokeWeight(1);
+    lipStemp.beginShape();
 
     for (let aSum of lipsExterior) {
       let pt = face.keypoints[aSum];
-      let x = map(pt.x, 0, video.width, zeroX, zeroX + newWidth);
-      let y = map(pt.y, 0, video.height, zeroY, zeroY + newHeight);
-      vertex(x, y);
+      let x = (pt.x - cX) * lipBig + cX;
+      let y = (pt.y - cY) * lipBig + cY;
+      x = map(x, 0, video.width, zeroX, zeroX + newWidth);
+      y = map(y, 0, video.height, zeroY, zeroY + newHeight);
+      lipStemp.vertex(x, y);
     }
-    endShape(CLOSE);
 
-    beginShape();
-    for (let add of lipsInterior) {
-      let pt = face.keypoints[add];
-      let x = map(pt.x, 0, video.width, zeroX, zeroX + newWidth);
-      let y = map(pt.y, 0, video.height, zeroY, zeroY + newHeight);
-      vertex(x, y);
+    // 내곽 주딩이 그리기
+    lipStemp.beginContour();
+
+    // 꼭 입술 안에 색 없애려면 반대로 순회하는 구조 만들어야함
+    for (let add = lipsInterior.length - 1; add >= 0; add--) {
+      let pt = face.keypoints[lipsInterior[add]];
+      let x = (pt.x - cX) * lipBig + cX;
+      let y = (pt.y - cY) * lipBig + cY;
+      x = map(x, 0, video.width, zeroX, zeroX + newWidth);
+      y = map(y, 0, video.height, zeroY, zeroY + newHeight);
+      lipStemp.vertex(x, y);
     }
-    endShape(CLOSE);
+    lipStemp.endContour();
 
+    lipStemp.endShape(CLOSE);
+    // }
     // 얼굴에 점(키포인트) 그리기 위치가 얼굴 고정 안되고 정수리에 그려짐
     // for (let cnt = 0; cnt < face.keypoints.length; cnt++) {
     //   let keypoint = face.keypoints[cnt];
