@@ -1,8 +1,45 @@
-html, body {
+/* 기존에 있던 설정 */
+/* html, body {
   margin: 0;
   padding: 0;
 }
 
 canvas {
   display: block;
+} */
+
+/* 교수님 파일 해체쇼 */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+#canvas-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  /* fill-핵심: 캔버스 비율 무시하고 화면 꽉 채움 */
+  /* contain : 비율 유지, 최대 크기  */
+  display: block;
+
+  /* h1 절대 위치로 띄움 근데도 video에 가려져서 안 보이는듯..ㅎㅎ..*/
+  #title {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    color: black;
+    font-size: 24px;
+    z-index: 10;
+  }
 }
