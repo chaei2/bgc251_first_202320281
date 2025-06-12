@@ -1,4 +1,6 @@
 // 얼굴 인식 모델 만들기
+// 다니엘 데니쉬 영상 보며 만든 코드
+// 템플릿 화면 사이즈: 715 * 820
 let video;
 let faceMesh;
 let faces = [];
@@ -18,8 +20,9 @@ function gotFaces(results) {
 }
 
 function setup() {
-  createCanvas(640, 480);
+  createCanvas(1280, 720);
   video = createCapture(VIDEO, { flipped: true });
+  video.size(width, height);
   video.hide();
 
   // Start detecting faces
@@ -35,8 +38,8 @@ function draw() {
     let face = faces[0];
 
     // Draw keypoints on the detected face
-    for (let i = 0; i < face.keypoints.length; i++) {
-      let keypoint = face.keypoints[i];
+    for (let cnt = 0; cnt < face.keypoints.length; cnt++) {
+      let keypoint = face.keypoints[cnt];
       stroke(255, 255, 0);
       strokeWeight(5);
       point(keypoint.x, keypoint.y);
