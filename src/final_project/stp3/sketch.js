@@ -1,4 +1,4 @@
-// 얼굴 인식 모델 만들기
+// 얼굴 인식겸 영상따라 민들어, 실험보기
 let video;
 let faceMesh;
 let faces = [];
@@ -30,10 +30,9 @@ function draw() {
   background(0);
   image(video, 0, 0, width, height);
 
-  // Ensure at least one face is detected
   if (faces.length > 0) {
     let face = faces[0];
-
+    let lEyeBrow = face.leftEyeBrow;
     // Draw keypoints on the detected face
     for (let i = 0; i < face.keypoints.length; i++) {
       let keypoint = face.keypoints[i];
